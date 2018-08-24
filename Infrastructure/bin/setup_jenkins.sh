@@ -27,3 +27,25 @@ echo "Setting up Jenkins in project ${GUID}-jenkins from Git Repo ${REPO} for Cl
 # * CLUSTER: the base url of the cluster used (e.g. na39.openshift.opentlc.com)
 
 # To be Implemented by Student
+oc new-app jenkins-persistent --param ENABLE_OAUTH=true --param MEMORY_LIMIT=2Gi --param VOLUME_CAPACITY=4Gi -n ${GUID}-jenkins
+oc set resources dc/jenkins --limits=cpu=1 --requests=memory=2Gi,cpu=1 -n ${GUID}-jenkins
+
+
+oc rollout status dc/jenkins -n ${GUID}-jenkins –w
+
+cat <<ENDL | oc new-build -n ${GUID}-jenkins --name jenkins-slave-appdev -D –
+FROM docker.io/openshift/jenkins-slave-maven-centos7:v3.9
+
+
+USER root
+
+
+RUN yum -y install skopeo apb &&     yum clean all
+
+
+USER 1001
+
+ENDL
+oc new-build -n ${GUID}-jenkins https://github.com/VijayalakshmiKumar02/advdev_homework_template.git --context-dir=MLBParks --name mlbparks-pipeline
+oc new-build -n ${GUID}-jenkins https://github.com/VijayalakshmiKumar02/advdev_homework_template.git --context-dir=ParksMap --name parksmap-pipeline
+oc new-build -n ${GUID}-jenkins https://github.com/VijayalakshmiKumar02/advdev_homework_template.git --context-dir=Nationalparks --name nationalparks-pipeline
